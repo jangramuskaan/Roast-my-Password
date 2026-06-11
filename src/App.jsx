@@ -4,6 +4,19 @@ function App() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const breachedPasswords = [
+    "123456",
+    "password",
+    "qwerty",
+    "admin",
+    "welcome",
+    "password123",
+    "abc123",
+    "letmein",
+    "iloveyou",
+    "000000",
+  ];
+
   const getStrength = (pwd) => {
     let score = 0;
 
@@ -15,6 +28,29 @@ function App() {
     if (/[^A-Za-z0-9]/.test(pwd)) score += 20;
 
     return Math.min(score, 100);
+  };
+
+  const calculateEntropy = (pwd) => {
+    if (!pwd) return 0;
+
+    let charset = 0;
+
+    if (/[a-z]/.test(pwd)) charset += 26;
+    if (/[A-Z]/.test(pwd)) charset += 26;
+    if (/[0-9]/.test(pwd)) charset += 10;
+    if (/[^A-Za-z0-9]/.test(pwd)) charset += 32;
+
+    return Math.round(
+      pwd.length * Math.log2(charset || 1)
+    );
+  };
+
+  const getCrackTime = (score) => {
+    if (score < 25) return "2 seconds";
+    if (score < 50) return "10 minutes";
+    if (score < 75) return "3 days";
+    if (score < 90) return "15 years";
+    return "500+ years";
   };
 
   const weakRoasts = [
@@ -68,14 +104,6 @@ function App() {
     return strongRoasts[Math.floor(Math.random() * strongRoasts.length)];
   };
 
-  const getCrackTime = (score) => {
-    if (score < 25) return "2 seconds";
-    if (score < 50) return "10 minutes";
-    if (score < 75) return "3 days";
-    if (score < 90) return "15 years";
-    return "500+ years";
-  };
-
   const generatePassword = () => {
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
@@ -98,6 +126,10 @@ function App() {
     if (strength < 75) return "#f59e0b";
     return "#22c55e";
   };
+
+  const isBreached = breachedPasswords.includes(
+    password.toLowerCase()
+  );
 
   return (
     <div className="container">
@@ -128,6 +160,25 @@ function App() {
 
       {password && (
         <>
+          <div className="requirements">
+            <h3>Password Checklist</h3>
+
+            <p>{password.length >= 12 ? "✅" : "❌"} 12+ Characters</p>
+
+            <p>{/[A-Z]/.test(password) ? "✅" : "❌"} Uppercase Letter</p>
+
+            <p>{/[a-z]/.test(password) ? "✅" : "❌"} Lowercase Letter</p>
+
+            <p>{/[0-9]/.test(password) ? "✅" : "❌"} Number</p>
+
+            <p>
+              {/[^A-Za-z0-9]/.test(password)
+                ? "✅"
+                : "❌"}{" "}
+              Special Character
+            </p>
+          </div>
+
           <div className="meter">
             <div
               className="fill"
@@ -140,13 +191,57 @@ function App() {
 
           <h3>Strength: {strength}/100</h3>
 
-          <p className="crack-time">
-            Estimated Crack Time:
-            <strong> {getCrackTime(strength)}</strong>
-          </p>
+          <div className="dashboard">
+            <div className="card">
+              <h4>Security Score</h4>
+              <span>{strength}</span>
+            </div>
+
+            <div className="card">
+              <h4>Crack Time</h4>
+              <span>{getCrackTime(strength)}</span>
+            </div>
+
+            <div className="card">
+              <h4>Entropy</h4>
+              <span>{calculateEntropy(password)} bits</span>
+            </div>
+          </div>
+
+          {isBreached && (
+            <div className="breach-warning">
+              🚨 WARNING
+              <br />
+              This password appears in a known breached-password list.
+            </div>
+          )}
 
           <div className="roast-card">
             {getRoast(strength)}
+          </div>
+
+          <div className="terminal">
+            <p>{">"} Initializing attack...</p>
+
+            {strength < 50 ? (
+              <>
+                <p>{">"} Trying password...</p>
+                <p>{">"} Trying password123...</p>
+                <p>{">"} Trying admin123...</p>
+                <p className="danger">
+                  ACCESS GRANTED
+                </p>
+              </>
+            ) : (
+              <>
+                <p>{">"} Attempt Failed</p>
+                <p>{">"} Attempt Failed</p>
+                <p>{">"} Attempt Failed</p>
+                <p className="safe">
+                  ACCESS DENIED
+                </p>
+              </>
+            )}
           </div>
 
           <button
